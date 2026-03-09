@@ -219,25 +219,33 @@ function showPasteModal() {
   pasteTextarea.value = '';
   pasteModal.hidden = false;
   pasteTextarea.focus();
+  enableAutoSave();
 }
 
 pasteModalClose.addEventListener('click', () => { pasteModal.hidden = true; });
 
-// Auto-save as soon as text is pasted (primary path on iOS)
-pasteTextarea.addEventListener('paste', (e) => {
-  const text = e.clipboardData?.getData('text/plain') || '';
-  if (text.trim()) {
-    e.preventDefault();
-    pasteTextarea.value = text;
+// Auto-save when text appears in textarea (works reliably on iOS Safari)
+// The input event fires after the text is actually inserted, unlike paste/clipboardData.
+let waitingForPaste = false;
+
+function enableAutoSave() {
+  waitingForPaste = true;
+}
+
+pasteTextarea.addEventListener('input', () => {
+  if (!waitingForPaste) return;
+  const text = pasteTextarea.value.trim();
+  if (text) {
+    waitingForPaste = false;
     savePastedText(text);
-    return;
   }
-  // Fallback: read from textarea after paste populates it
-  setTimeout(() => savePastedText(pasteTextarea.value), 50);
 });
 
 // Keep Save button as secondary option
-pasteSaveBtn.addEventListener('click', () => savePastedText(pasteTextarea.value));
+pasteSaveBtn.addEventListener('click', () => {
+  waitingForPaste = false;
+  savePastedText(pasteTextarea.value);
+});
 
 // ===== Reader =====
 async function openReader(id) {
