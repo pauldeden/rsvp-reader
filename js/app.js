@@ -45,15 +45,8 @@ const clearDataBtn = document.getElementById('clear-data-btn');
 const pasteModal = document.getElementById('paste-modal');
 const pasteModalClose = document.getElementById('paste-modal-close');
 const pasteTextarea = document.getElementById('paste-textarea');
-const pasteTitleInput = document.getElementById('paste-title');
 const pasteSaveBtn = document.getElementById('paste-save-btn');
 
-// Confirm modal
-const confirmModal = document.getElementById('confirm-modal');
-const confirmPreview = document.getElementById('confirm-preview');
-const confirmTitle = document.getElementById('confirm-title');
-const confirmCancel = document.getElementById('confirm-cancel');
-const confirmSave = document.getElementById('confirm-save');
 
 // ===== State =====
 let currentTextId = null;
@@ -158,6 +151,9 @@ function createCard(t) {
   const progress = t.wordCount > 0 ? Math.round((t.currentWord / t.wordCount) * 100) : 0;
 
   card.innerHTML = `
+    <button class="text-card-delete-icon" aria-label="Delete">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+    </button>
     <div class="text-card-title">${escapeHtml(t.title)}</div>
     <div class="text-card-meta">
       <span>${t.wordCount} words</span>
@@ -166,43 +162,19 @@ function createCard(t) {
     <div class="text-card-progress">
       <div class="text-card-progress-fill" style="width: ${progress}%"></div>
     </div>
-    <button class="text-card-delete">Delete</button>
   `;
 
   // Tap to open
   card.addEventListener('click', (e) => {
-    if (e.target.closest('.text-card-delete')) return;
-    if (card.classList.contains('swiped')) {
-      card.classList.remove('swiped');
-      return;
-    }
+    if (e.target.closest('.text-card-delete-icon')) return;
     openReader(t.id);
   });
 
   // Delete button
-  card.querySelector('.text-card-delete').addEventListener('click', async () => {
+  card.querySelector('.text-card-delete-icon').addEventListener('click', async () => {
     if (confirm('Delete this text?')) {
       await deleteText(t.id);
       await renderLibrary();
-    }
-  });
-
-  // Swipe to reveal delete
-  let startX = 0;
-  let currentX = 0;
-  card.addEventListener('touchstart', (e) => {
-    startX = e.touches[0].clientX;
-    currentX = startX;
-  }, { passive: true });
-  card.addEventListener('touchmove', (e) => {
-    currentX = e.touches[0].clientX;
-  }, { passive: true });
-  card.addEventListener('touchend', () => {
-    const diff = startX - currentX;
-    if (diff > 60) {
-      card.classList.add('swiped');
-    } else if (diff < -30) {
-      card.classList.remove('swiped');
     }
   });
 
@@ -213,7 +185,8 @@ function createCard(t) {
 pasteBtn.addEventListener('click', async () => {
   const result = await readClipboard();
   if (result.ok) {
-    showConfirmModal(result.text);
+    await addText('', result.text);
+    await renderLibrary();
   } else {
     showPasteModal();
   }
@@ -221,7 +194,6 @@ pasteBtn.addEventListener('click', async () => {
 
 function showPasteModal() {
   pasteTextarea.value = '';
-  pasteTitleInput.value = '';
   pasteModal.hidden = false;
   pasteTextarea.focus();
 }
@@ -231,29 +203,8 @@ pasteModalClose.addEventListener('click', () => { pasteModal.hidden = true; });
 pasteSaveBtn.addEventListener('click', async () => {
   const text = pasteTextarea.value.trim();
   if (!text) return;
-  const title = pasteTitleInput.value.trim();
-  await addText(title, text);
+  await addText('', text);
   pasteModal.hidden = true;
-  await renderLibrary();
-});
-
-function showConfirmModal(text) {
-  const preview = text.length > 200 ? text.substring(0, 200) + '...' : text;
-  confirmPreview.textContent = preview;
-  confirmTitle.value = '';
-  confirmModal.hidden = false;
-  confirmTitle.focus();
-  confirmSave._pendingText = text;
-}
-
-confirmCancel.addEventListener('click', () => { confirmModal.hidden = true; });
-
-confirmSave.addEventListener('click', async () => {
-  const text = confirmSave._pendingText;
-  if (!text) return;
-  const title = confirmTitle.value.trim();
-  await addText(title, text);
-  confirmModal.hidden = true;
   await renderLibrary();
 });
 
