@@ -1,32 +1,28 @@
-// ===== Clipboard handler with fallback =====
+// ===== Clipboard handler with iOS-aware fallback =====
 
-/**
- * Attempt to read text from clipboard.
- * Tries readText() first, then read() with ClipboardItem (better Safari support).
- * Returns { ok: true, text } or { ok: false } if denied/unavailable.
- */
-export async function readClipboard() {
-  // Approach 1: readText() — works on Chrome, Firefox, some Safari
+const isIOSWebKit =
+  /iP(hone|ad|od)/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+/** Returns true if we should skip the async Clipboard API and go straight to native paste flow */
+export function shouldUseNativePasteFlow() {
+  return isIOSWebKit;
+}
+
+/** Try async Clipboard API (works on Chrome, Firefox, desktop Safari) */
+export async function readClipboardText() {
   try {
     if (navigator.clipboard?.readText) {
       const text = await navigator.clipboard.readText();
       if (text?.trim()) return { ok: true, text: text.trim() };
     }
   } catch { /* denied or unavailable */ }
-
-  // Approach 2: read() with ClipboardItem — better Safari iOS support
-  try {
-    if (navigator.clipboard?.read) {
-      const items = await navigator.clipboard.read();
-      for (const item of items) {
-        if (item.types.includes('text/plain')) {
-          const blob = await item.getType('text/plain');
-          const text = await blob.text();
-          if (text?.trim()) return { ok: true, text: text.trim() };
-        }
-      }
-    }
-  } catch { /* denied or unavailable */ }
-
   return { ok: false };
+}
+
+/** Focus a target element and attempt execCommand('paste') to trigger iOS native paste UI */
+export function triggerNativePaste(target) {
+  if (!target) return;
+  target.focus();
+  try { document.execCommand('paste'); } catch { /* ignored */ }
 }

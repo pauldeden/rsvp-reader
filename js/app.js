@@ -1,7 +1,7 @@
 // ===== RSVP Reader — Main App =====
 
 import { getAllTexts, addText, deleteText, getText, saveText, clearAll, getSetting, setSetting } from './storage.js';
-import { readClipboard } from './clipboard.js';
+import { readClipboardText, shouldUseNativePasteFlow, triggerNativePaste } from './clipboard.js';
 import { Reader } from './reader.js';
 
 // ===== DOM refs =====
@@ -183,15 +183,37 @@ function createCard(t) {
 }
 
 // ===== Paste Flow =====
+let savingPaste = false;
+
 pasteBtn.addEventListener('click', async () => {
-  const result = await readClipboard();
+  if (shouldUseNativePasteFlow()) {
+    // iOS: show textarea immediately and trigger native paste UI
+    showPasteModal();
+    triggerNativePaste(pasteTextarea);
+    return;
+  }
+  // Non-iOS: try async clipboard API first
+  const result = await readClipboardText();
   if (result.ok) {
-    await addText('', result.text);
-    await renderLibrary();
+    await savePastedText(result.text);
   } else {
     showPasteModal();
   }
 });
+
+async function savePastedText(rawText) {
+  const text = rawText.trim();
+  if (!text || savingPaste) return;
+  savingPaste = true;
+  try {
+    await addText('', text);
+    pasteTextarea.value = '';
+    pasteModal.hidden = true;
+    await renderLibrary();
+  } finally {
+    savingPaste = false;
+  }
+}
 
 function showPasteModal() {
   pasteTextarea.value = '';
@@ -201,26 +223,21 @@ function showPasteModal() {
 
 pasteModalClose.addEventListener('click', () => { pasteModal.hidden = true; });
 
-// Auto-save as soon as text is pasted into the fallback textarea
-pasteTextarea.addEventListener('paste', () => {
-  // Defer to let the paste content populate the textarea
-  setTimeout(async () => {
-    const text = pasteTextarea.value.trim();
-    if (!text) return;
-    await addText('', text);
-    pasteModal.hidden = true;
-    await renderLibrary();
-  }, 50);
+// Auto-save as soon as text is pasted (primary path on iOS)
+pasteTextarea.addEventListener('paste', (e) => {
+  const text = e.clipboardData?.getData('text/plain') || '';
+  if (text.trim()) {
+    e.preventDefault();
+    pasteTextarea.value = text;
+    savePastedText(text);
+    return;
+  }
+  // Fallback: read from textarea after paste populates it
+  setTimeout(() => savePastedText(pasteTextarea.value), 50);
 });
 
-// Keep Save button as secondary option (e.g. if user types/edits text)
-pasteSaveBtn.addEventListener('click', async () => {
-  const text = pasteTextarea.value.trim();
-  if (!text) return;
-  await addText('', text);
-  pasteModal.hidden = true;
-  await renderLibrary();
-});
+// Keep Save button as secondary option
+pasteSaveBtn.addEventListener('click', () => savePastedText(pasteTextarea.value));
 
 // ===== Reader =====
 async function openReader(id) {
