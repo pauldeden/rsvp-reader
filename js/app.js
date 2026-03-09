@@ -66,6 +66,7 @@ const reader = new Reader({
   onEnd() {
     updatePlayPauseUI(false);
     savePosition();
+    showFinished();
   },
   onStateChange(playing) {
     updatePlayPauseUI(playing);
@@ -245,6 +246,17 @@ backBtn.addEventListener('click', async () => {
   clearWord();
 });
 
+function showFinished() {
+  wordPre.textContent = '';
+  wordORP.textContent = 'Done';
+  wordPost.textContent = '';
+  progressBar.style.width = '100%';
+  wordCounter.textContent = `${reader.totalWords} / ${reader.totalWords}`;
+  readerTopBar.classList.remove('hidden');
+  readerControls.classList.add('hidden');
+  clearTimeout(controlsTimeout);
+}
+
 function clearWord() {
   wordPre.textContent = '';
   wordORP.textContent = '';
@@ -253,8 +265,12 @@ function clearWord() {
   wordCounter.textContent = '0 / 0';
 }
 
-// Play / Pause — tap on word area
+// Play / Pause — tap on word area (or close if finished)
 wordDisplay.addEventListener('click', () => {
+  if (reader.finished) {
+    backBtn.click();
+    return;
+  }
   reader.toggle();
   showControls();
 });

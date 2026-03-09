@@ -48,11 +48,12 @@ export class Reader {
     return 60000 / this.wpm;
   }
 
+  get finished() {
+    return this.words.length > 0 && this.index >= this.words.length;
+  }
+
   play() {
-    if (this.playing || this.words.length === 0) return;
-    if (this.index >= this.words.length) {
-      this.index = 0;
-    }
+    if (this.playing || this.words.length === 0 || this.finished) return;
     this.playing = true;
     this.expectedTime = performance.now() + this._wordDelay(this.index);
     this.onStateChange?.(true);
