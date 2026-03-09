@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>RSVP Reader</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1A1A2E">
+
+  <!-- iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ===== LIBRARY SCREEN ===== -->
+  <div id="library-screen" class="screen active">
+    <header class="top-bar">
+      <h1 class="app-title">RSVP Reader</h1>
+      <button id="settings-btn" class="icon-btn" aria-label="Settings">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </header>
+
+    <div id="text-list" class="text-list">
+      <div id="empty-state" class="empty-state">
+        <p>No texts yet.</p>
+        <p>Copy some text, then tap the button below to paste it.</p>
+      </div>
+    </div>
+
+    <button id="paste-btn" class="paste-btn">Paste from Clipboard</button>
+  </div>
+
+  <!-- ===== READER SCREEN ===== -->
+  <div id="reader-screen" class="screen">
+    <div id="reader-progress-bar" class="reader-progress-bar"></div>
+
+    <header id="reader-top-bar" class="reader-top-bar">
+      <button id="back-btn" class="icon-btn" aria-label="Back">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span id="word-counter" class="word-counter">0 / 0</span>
+    </header>
+
+    <div id="word-display" class="word-display">
+      <div class="focus-guide"></div>
+      <span id="word-pre"></span><span id="word-orp"></span><span id="word-post"></span>
+    </div>
+
+    <div id="reader-controls" class="reader-controls">
+      <div class="speed-row">
+        <button id="speed-down" class="speed-btn" aria-label="Slow down">&#9664;</button>
+        <span id="wpm-display" class="wpm-display">300 WPM</span>
+        <button id="speed-up" class="speed-btn" aria-label="Speed up">&#9654;</button>
+      </div>
+      <button id="play-pause-btn" class="play-pause-btn" aria-label="Play or Pause">
+        <svg id="play-icon" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <svg id="pause-icon" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== SETTINGS MODAL ===== -->
+  <div id="settings-modal" class="modal-overlay" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button id="settings-close" class="icon-btn" aria-label="Close">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="setting-row">
+          <span>Reading Speed</span>
+          <div class="setting-control">
+            <input type="range" id="set-wpm" min="100" max="1200" step="25" value="300">
+            <span id="set-wpm-val" class="setting-value">300 WPM</span>
+          </div>
+        </label>
+        <label class="setting-row">
+          <span>Font Size</span>
+          <div class="setting-control">
+            <input type="range" id="set-fontsize" min="28" max="72" step="2" value="44">
+            <span id="set-fontsize-val" class="setting-value">44px</span>
+          </div>
+        </label>
+        <label class="setting-row">
+          <span>Anchor Letter Highlight</span>
+          <input type="checkbox" id="set-orp" checked>
+        </label>
+        <label class="setting-row">
+          <span>Focus Guide Line</span>
+          <input type="checkbox" id="set-guide" checked>
+        </label>
+        <div class="setting-row danger-row">
+          <button id="clear-data-btn" class="danger-btn">Clear All Data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PASTE MODAL (fallback) ===== -->
+  <div id="paste-modal" class="modal-overlay" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Paste Text</h2>
+        <button id="paste-modal-close" class="icon-btn" aria-label="Close">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <textarea id="paste-textarea" class="paste-textarea" placeholder="Paste your text here..." rows="8"></textarea>
+        <input type="text" id="paste-title" class="paste-title-input" placeholder="Title (optional)">
+        <button id="paste-save-btn" class="accent-btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CONFIRM PASTE MODAL ===== -->
+  <div id="confirm-modal" class="modal-overlay" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Save Text</h2>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-preview" class="confirm-preview"></p>
+        <input type="text" id="confirm-title" class="paste-title-input" placeholder="Title (optional)">
+        <div class="modal-actions">
+          <button id="confirm-cancel" class="ghost-btn">Cancel</button>
+          <button id="confirm-save" class="accent-btn">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
