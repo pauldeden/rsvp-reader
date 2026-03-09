@@ -201,6 +201,19 @@ function showPasteModal() {
 
 pasteModalClose.addEventListener('click', () => { pasteModal.hidden = true; });
 
+// Auto-save as soon as text is pasted into the fallback textarea
+pasteTextarea.addEventListener('paste', () => {
+  // Defer to let the paste content populate the textarea
+  setTimeout(async () => {
+    const text = pasteTextarea.value.trim();
+    if (!text) return;
+    await addText('', text);
+    pasteModal.hidden = true;
+    await renderLibrary();
+  }, 50);
+});
+
+// Keep Save button as secondary option (e.g. if user types/edits text)
 pasteSaveBtn.addEventListener('click', async () => {
   const text = pasteTextarea.value.trim();
   if (!text) return;
