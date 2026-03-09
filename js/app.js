@@ -23,6 +23,8 @@ const wordCounter = document.getElementById('word-counter');
 const progressBar = document.getElementById('reader-progress-bar');
 const readerTopBar = document.getElementById('reader-top-bar');
 const readerControls = document.getElementById('reader-controls');
+const finishedControls = document.getElementById('finished-controls');
+const deleteFinishedBtn = document.getElementById('delete-finished-btn');
 const speedDown = document.getElementById('speed-down');
 const speedUp = document.getElementById('speed-up');
 const wpmDisplay = document.getElementById('wpm-display');
@@ -256,6 +258,7 @@ async function openReader(id) {
   await saveText(t);
 
   showScreen('reader');
+  finishedControls.hidden = true;
   reader.load(t.content, t.currentWord || 0);
   showControls();
 }
@@ -284,6 +287,18 @@ backBtn.addEventListener('click', async () => {
   clearWord();
 });
 
+// Delete from finished screen
+deleteFinishedBtn.addEventListener('click', async () => {
+  if (!currentTextId) return;
+  if (confirm('Delete this text?')) {
+    await deleteText(currentTextId);
+    currentTextId = null;
+    showScreen('library');
+    await renderLibrary();
+    clearWord();
+  }
+});
+
 function showFinished() {
   wordPre.textContent = '';
   wordORP.textContent = 'Done';
@@ -292,6 +307,7 @@ function showFinished() {
   wordCounter.textContent = `${reader.totalWords} / ${reader.totalWords}`;
   readerTopBar.classList.remove('hidden');
   readerControls.classList.add('hidden');
+  finishedControls.hidden = false;
   clearTimeout(controlsTimeout);
 }
 

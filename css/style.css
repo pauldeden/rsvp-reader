@@ -270,6 +270,18 @@ html, body {
   color: var(--text);
 }
 
+.finished-controls {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  padding-bottom: calc(16px + var(--safe-bottom));
+  flex-shrink: 0;
+}
+
+.finished-controls[hidden] {
+  display: none;
+}
+
 .focus-guide {
   position: absolute;
   top: 50%;
