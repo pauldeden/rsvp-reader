@@ -41,6 +41,7 @@ const setFontsize = document.getElementById('set-fontsize');
 const setFontsizeVal = document.getElementById('set-fontsize-val');
 const setOrp = document.getElementById('set-orp');
 const setGuide = document.getElementById('set-guide');
+const appVersion = document.getElementById('app-version');
 const clearDataBtn = document.getElementById('clear-data-btn');
 
 // Paste modal (fallback)
@@ -79,8 +80,51 @@ const reader = new Reader({
 // ===== Init =====
 async function init() {
   loadSettings();
+  loadVersion();
   await renderLibrary();
   registerServiceWorker();
+}
+
+async function loadVersion() {
+  if (!appVersion) return;
+  try {
+    const response = await fetch(`version.json?ts=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+    });
+    if (!response.ok) {
+      throw new Error(`version.json returned ${response.status}`);
+    }
+    const payload = await response.json();
+    const shortCommit = normalizeVersionString(payload.shortCommit);
+    const deployedAt = typeof payload.deployedAt === 'string' ? payload.deployedAt : '';
+    appVersion.textContent = formatVersionDisplay(shortCommit, deployedAt);
+  } catch (_) {
+    appVersion.textContent = 'Unavailable';
+  }
+}
+
+function normalizeVersionString(value) {
+  if (typeof value !== 'string') return '';
+  const normalized = value.trim();
+  if (!normalized || normalized === 'local-dev') {
+    return '';
+  }
+  return normalized;
+}
+
+function formatVersionDisplay(shortCommit, deployedAt) {
+  const parts = [];
+  if (shortCommit) {
+    parts.push(shortCommit);
+  }
+  if (deployedAt) {
+    const date = new Date(deployedAt);
+    if (!Number.isNaN(date.getTime())) {
+      parts.push(date.toLocaleString());
+    }
+  }
+  return parts.join(' · ') || 'Unavailable';
 }
 
 // ===== Settings =====

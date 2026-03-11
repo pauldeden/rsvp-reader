@@ -1,7 +1,8 @@
 // ===== RSVP Reader Service Worker =====
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = '__BUILD_VERSION__';
 const CACHE_NAME = `rsvp-reader-${CACHE_VERSION}`;
+const HAS_DEPLOY_STAMP = !CACHE_VERSION.startsWith('__BUILD_');
 
 const PRECACHE_URLS = [
   './',
@@ -44,6 +45,28 @@ self.addEventListener('fetch', (event) => {
 
   // Only handle same-origin requests
   if (url.origin !== location.origin) return;
+
+  if (url.pathname.endsWith('/version.json') || url.pathname === '/version.json') {
+    event.respondWith(fetch(event.request, { cache: 'no-store' }));
+    return;
+  }
+
+  if (!HAS_DEPLOY_STAMP) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(async (cache) => {
+        try {
+          const response = await fetch(event.request);
+          if (response.ok) {
+            cache.put(event.request, response.clone());
+          }
+          return response;
+        } catch (_) {
+          return cache.match(event.request);
+        }
+      })
+    );
+    return;
+  }
 
   // HTML: stale-while-revalidate
   if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {

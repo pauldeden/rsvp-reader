@@ -433,6 +433,19 @@ html, body {
   font-weight: 600;
 }
 
+.version-row {
+  align-items: flex-start;
+}
+
+.version-value {
+  color: var(--text-muted);
+  font-size: 13px;
+  max-width: 180px;
+  line-height: 1.4;
+  text-align: right;
+  word-break: break-word;
+}
+
 input[type="range"] {
   width: 140px;
   accent-color: var(--accent);

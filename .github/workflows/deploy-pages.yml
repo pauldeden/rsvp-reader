@@ -1,0 +1,67 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Stage site
+        run: |
+          mkdir -p site/css site/icons site/js
+          cp index.html manifest.json sw.js version.json site/
+          cp -R css/. site/css/
+          cp -R icons/. site/icons/
+          cp -R js/. site/js/
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+
+          sw_path = Path("site/sw.js")
+          sw_path.write_text(
+              sw_path.read_text(encoding="utf-8").replace("__BUILD_VERSION__", os.environ["BUILD_VERSION"]),
+              encoding="utf-8",
+          )
+          if "__BUILD_VERSION__" in sw_path.read_text(encoding="utf-8"):
+              raise SystemExit("BUILD_VERSION placeholder was not replaced in site/sw.js")
+          PY
+          cat <<EOF > site/version.json
+          {
+            "commit": "${GITHUB_SHA}",
+            "shortCommit": "${GITHUB_SHA::7}",
+            "deployedAt": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          }
+          EOF
+        env:
+          BUILD_VERSION: ${{ github.sha }}
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

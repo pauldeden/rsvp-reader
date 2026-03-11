@@ -19,7 +19,7 @@
 | **Speed range** | 300–1000+ WPM with live adjustment while reading |
 | **Storage** | All data in browser (IndexedDB for texts, localStorage for settings) |
 | **Language** | Full support for English and Brazilian Portuguese (pt-BR) text |
-| **Deployment** | `git push` to `main` → GitHub Pages auto-deploys |
+| **Deployment** | `git push` to `main` → GitHub Actions deploys GitHub Pages |
 
 ---
 
@@ -333,7 +333,7 @@ PRECACHE_URLS = [
 ];
 ```
 
-The service worker is updated by changing `CACHE_VERSION` on deploy. Old caches are purged on `activate`.
+The Pages workflow stamps the service worker cache version on deploy. Old caches are purged on `activate`.
 
 ### 7.3 Offline Behavior
 
@@ -391,14 +391,14 @@ git remote add origin git@github.com:<username>/rsvp-reader.git
 git push -u origin main
 
 # Enable GitHub Pages:
-# Settings → Pages → Source: Deploy from branch → main → / (root)
+# Settings → Pages → Source: GitHub Actions
 ```
 
 ### 9.2 Deploy
 
 ```bash
 git add -A && git commit -m "description" && git push
-# GitHub Pages auto-deploys within ~60 seconds
+# GitHub Actions deploys GitHub Pages within ~60 seconds
 ```
 
 ### 9.3 Access
