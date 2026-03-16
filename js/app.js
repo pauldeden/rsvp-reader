@@ -370,8 +370,9 @@ async function handleUrlFetch() {
     const { title, markdown } = parseJinaResponse(response);
     const content = markdownToPlainText(markdown);
 
-    if (!content || content.split(/\s+/).length < 10) {
-      showUrlError('Could not find readable text on this page.');
+    const wordCount = content ? content.split(/\s+/).length : 0;
+    if (wordCount < 30) {
+      showUrlError('Could not extract article text. The site may load content dynamically. Try the original article URL instead of an aggregator link (e.g. MSN, Google News).');
       return;
     }
 

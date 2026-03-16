@@ -19,21 +19,30 @@ export function isValidUrl(str) {
  */
 export async function fetchArticle(url) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   try {
     const response = await fetch(READER_BASE + url, {
       signal: controller.signal,
-      headers: { Accept: 'text/plain' },
+      headers: {
+        Accept: 'text/plain',
+        'X-Timeout': '15',
+      },
     });
     if (!response.ok) {
       if (response.status === 404) throw new Error('Page not found.');
+      if (response.status === 451) throw new Error('This site is temporarily unavailable for import. Try again later.');
       throw new Error('Could not fetch this page. Please try again.');
     }
-    return await response.text();
+    const text = await response.text();
+    // Jina returns JSON errors even on 200 sometimes
+    if (text.startsWith('{"data":null')) {
+      throw new Error('Could not fetch this page. Please try again.');
+    }
+    return text;
   } catch (err) {
     if (err.name === 'AbortError') throw new Error('Request timed out.');
-    if (err.message === 'Page not found.' || err.message.startsWith('Could not'))
+    if (err.message === 'Page not found.' || err.message.startsWith('Could not') || err.message.startsWith('This site'))
       throw err;
     throw new Error('Could not fetch this page. Please try again.');
   } finally {
