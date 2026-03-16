@@ -2,6 +2,7 @@
 
 import { getAllTexts, addText, deleteText, getText, saveText, clearAll, getSetting, setSetting } from './storage.js';
 import { readClipboardText, shouldUseNativePasteFlow, triggerNativePaste } from './clipboard.js';
+import { isValidUrl, fetchArticle, parseJinaResponse, markdownToPlainText } from './urlimport.js';
 import { Reader } from './reader.js';
 
 // ===== DOM refs =====
@@ -49,6 +50,14 @@ const pasteModal = document.getElementById('paste-modal');
 const pasteModalClose = document.getElementById('paste-modal-close');
 const pasteTextarea = document.getElementById('paste-textarea');
 const pasteSaveBtn = document.getElementById('paste-save-btn');
+
+// URL import modal
+const urlBtn = document.getElementById('url-btn');
+const urlModal = document.getElementById('url-modal');
+const urlModalClose = document.getElementById('url-modal-close');
+const urlInput = document.getElementById('url-input');
+const urlStatus = document.getElementById('url-status');
+const urlFetchBtn = document.getElementById('url-fetch-btn');
 
 
 // ===== State =====
@@ -292,6 +301,151 @@ pasteSaveBtn.addEventListener('click', () => {
   waitingForPaste = false;
   savePastedText(pasteTextarea.value);
 });
+
+// ===== URL Import Flow =====
+let fetchingUrl = false;
+let urlFetchId = 0;
+
+urlBtn.addEventListener('click', () => {
+  urlInput.value = '';
+  resetUrlStatus();
+  urlModal.hidden = false;
+  urlFetchBtn.textContent = 'Fetch Article';
+  urlFetchBtn.disabled = false;
+  urlInput.disabled = false;
+  urlFetchBtn.onclick = handleUrlFetch;
+  urlInput.focus();
+});
+
+urlModalClose.addEventListener('click', closeUrlModal);
+
+urlModal.addEventListener('click', (e) => {
+  if (e.target === urlModal) closeUrlModal();
+});
+
+function closeUrlModal() {
+  urlModal.hidden = true;
+  urlFetchId++; // invalidate any in-flight fetch
+  fetchingUrl = false;
+  urlFetchBtn.disabled = false;
+  urlInput.disabled = false;
+}
+
+urlInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') handleUrlFetch();
+});
+
+// Reset to fetch mode when URL is edited after a successful fetch
+urlInput.addEventListener('input', () => {
+  if (urlFetchBtn.textContent === 'Save to Library') {
+    urlFetchBtn.textContent = 'Fetch Article';
+    urlFetchBtn.onclick = handleUrlFetch;
+    resetUrlStatus();
+  }
+});
+
+async function handleUrlFetch() {
+  const raw = urlInput.value.trim();
+  if (!raw || fetchingUrl) return;
+
+  if (!isValidUrl(raw)) {
+    showUrlError('Please enter a web address starting with http:// or https://');
+    return;
+  }
+
+  if (!navigator.onLine) {
+    showUrlError("You're offline. URL import requires an internet connection.");
+    return;
+  }
+
+  fetchingUrl = true;
+  const thisId = ++urlFetchId;
+  showUrlLoading('Fetching article...');
+  urlFetchBtn.disabled = true;
+  urlInput.disabled = true;
+
+  try {
+    const response = await fetchArticle(raw);
+    if (thisId !== urlFetchId) return; // stale response, user changed URL
+    const { title, markdown } = parseJinaResponse(response);
+    const content = markdownToPlainText(markdown);
+
+    if (!content || content.split(/\s+/).length < 10) {
+      showUrlError('Could not find readable text on this page.');
+      return;
+    }
+
+    showUrlSuccess(title, content);
+  } catch (err) {
+    if (thisId !== urlFetchId) return;
+    showUrlError(err.message);
+  } finally {
+    if (thisId === urlFetchId) {
+      fetchingUrl = false;
+      urlFetchBtn.disabled = false;
+      urlInput.disabled = false;
+    }
+  }
+}
+
+function resetUrlStatus() {
+  urlStatus.hidden = true;
+  urlStatus.className = 'url-status';
+  urlStatus.innerHTML = '';
+}
+
+function showUrlLoading(msg) {
+  urlStatus.hidden = false;
+  urlStatus.className = 'url-status loading';
+  urlStatus.textContent = msg;
+}
+
+function showUrlError(msg) {
+  urlStatus.hidden = false;
+  urlStatus.className = 'url-status error';
+  urlStatus.textContent = msg;
+}
+
+function showUrlSuccess(title, content) {
+  const wordCount = content.trim().split(/\s+/).length;
+  const preview = content.substring(0, 200) + (content.length > 200 ? '...' : '');
+
+  urlStatus.hidden = false;
+  urlStatus.className = 'url-status success';
+  urlStatus.innerHTML = '';
+
+  const titleInput = document.createElement('input');
+  titleInput.type = 'text';
+  titleInput.className = 'url-title-input';
+  titleInput.value = title || 'Untitled';
+  urlStatus.appendChild(titleInput);
+
+  const meta = document.createElement('div');
+  meta.style.cssText = 'color: var(--text-muted); font-size: 13px; margin-top: 8px;';
+  meta.textContent = `${wordCount} words`;
+  urlStatus.appendChild(meta);
+
+  const previewEl = document.createElement('div');
+  previewEl.className = 'url-preview';
+  previewEl.textContent = preview;
+  urlStatus.appendChild(previewEl);
+
+  urlFetchBtn.textContent = 'Save to Library';
+  urlFetchBtn.disabled = false;
+  urlFetchBtn.onclick = async () => {
+    if (urlFetchBtn.disabled) return;
+    urlFetchBtn.disabled = true;
+    try {
+      const finalTitle = titleInput.value.trim() || 'Untitled';
+      await addText(finalTitle, content);
+      urlModal.hidden = true;
+      await renderLibrary();
+    } catch {
+      urlFetchBtn.disabled = false;
+      showUrlError('Could not save. Please try again.');
+    }
+  };
+}
 
 // ===== Reader =====
 async function openReader(id) {

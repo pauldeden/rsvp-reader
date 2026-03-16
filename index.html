@@ -30,11 +30,16 @@
     <div id="text-list" class="text-list">
       <div id="empty-state" class="empty-state">
         <p>No texts yet.</p>
-        <p>Copy some text, then tap the button below to paste it.</p>
+        <p>Copy some text and paste it, or import from a URL.</p>
       </div>
     </div>
 
-    <button id="paste-btn" class="paste-btn">Paste from Clipboard</button>
+    <div class="action-buttons">
+      <button id="paste-btn" class="paste-btn">Paste from Clipboard</button>
+      <button id="url-btn" class="url-btn" aria-label="Import from URL">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      </button>
+    </div>
   </div>
 
   <!-- ===== READER SCREEN ===== -->
@@ -125,6 +130,23 @@
       <div class="modal-body">
         <textarea id="paste-textarea" class="paste-textarea" placeholder="Tap Paste in the menu — it will save automatically" rows="8" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
         <button id="paste-save-btn" class="accent-btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== URL IMPORT MODAL ===== -->
+  <div id="url-modal" class="modal-overlay" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Import from URL</h2>
+        <button id="url-modal-close" class="icon-btn" aria-label="Close">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input id="url-input" type="url" class="url-input" placeholder="https://example.com/article" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <div id="url-status" class="url-status" hidden></div>
+        <button id="url-fetch-btn" class="accent-btn">Fetch Article</button>
       </div>
     </div>
   </div>
