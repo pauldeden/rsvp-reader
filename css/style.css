@@ -172,14 +172,7 @@ html, body {
   background: rgba(233, 69, 96, 0.12);
 }
 
-/* ===== Action Buttons ===== */
-.action-buttons {
-  display: flex;
-  gap: 10px;
-  margin: 12px 16px;
-  flex-shrink: 0;
-}
-
+/* ===== Paste Button ===== */
 .paste-btn {
   background: var(--accent);
   color: var(--text);
@@ -187,34 +180,16 @@ html, body {
   font-size: 16px;
   font-weight: 600;
   padding: 16px;
+  margin: 12px 16px;
   border-radius: 14px;
   cursor: pointer;
-  flex: 1;
+  flex-shrink: 0;
   min-height: 54px;
   transition: opacity 0.15s;
 }
 
 .paste-btn:active {
   opacity: 0.85;
-}
-
-.url-btn {
-  flex: 0 0 54px;
-  height: 54px;
-  background: var(--surface);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  transition: background 0.15s, color 0.15s;
-}
-
-.url-btn:active {
-  background: var(--accent2);
-  color: var(--text);
 }
 
 /* ===== Reader Screen ===== */
@@ -500,74 +475,6 @@ input[type="checkbox"] {
   border-color: var(--accent);
 }
 
-.url-input {
-  width: 100%;
-  background: var(--bg);
-  color: var(--text);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
-  padding: 12px;
-  font-size: 15px;
-  font-family: var(--font-stack);
-}
-
-.url-input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.url-status {
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.url-status[hidden] {
-  display: none;
-}
-
-.url-status.loading {
-  color: var(--text-muted);
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-.url-status.error {
-  color: var(--accent);
-}
-
-.url-status.success {
-  color: var(--text);
-}
-
-.url-title-input {
-  width: 100%;
-  background: var(--bg);
-  color: var(--text);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 15px;
-  font-weight: 600;
-  font-family: var(--font-stack);
-}
-
-.url-title-input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.url-preview {
-  color: var(--text-muted);
-  font-size: 14px;
-  line-height: 1.5;
-  max-height: 120px;
-  overflow: hidden;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
 .paste-title-input {
   width: 100%;
   background: var(--bg);
@@ -654,7 +561,7 @@ input[type="checkbox"] {
     width: 100%;
   }
 
-  .action-buttons {
+  .paste-btn {
     max-width: 600px;
     margin-left: auto;
     margin-right: auto;
