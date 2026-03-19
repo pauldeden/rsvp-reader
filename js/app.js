@@ -20,10 +20,12 @@ const wordPost = document.getElementById('word-post');
 const wordDisplay = document.getElementById('word-display');
 const focusGuide = wordDisplay.querySelector('.focus-guide');
 const wordCounter = document.getElementById('word-counter');
+const progressTrack = document.getElementById('reader-progress-track');
 const progressBar = document.getElementById('reader-progress-bar');
 const readerTopBar = document.getElementById('reader-top-bar');
 const readerControls = document.getElementById('reader-controls');
 const finishedControls = document.getElementById('finished-controls');
+const readAgainBtn = document.getElementById('read-again-btn');
 const deleteFinishedBtn = document.getElementById('delete-finished-btn');
 const speedDown = document.getElementById('speed-down');
 const speedUp = document.getElementById('speed-up');
@@ -331,6 +333,16 @@ backBtn.addEventListener('click', async () => {
   clearWord();
 });
 
+// Read again from finished screen
+readAgainBtn.addEventListener('click', async () => {
+  finishedControls.hidden = true;
+  readerControls.classList.remove('hidden');
+  reader.seekTo(0);
+  reader.play();
+  showControls();
+  await savePosition();
+});
+
 // Delete from finished screen
 deleteFinishedBtn.addEventListener('click', async () => {
   if (!currentTextId) return;
@@ -398,7 +410,7 @@ function changeSpeed(delta) {
   showControls();
 }
 
-// Swipe on reader for speed change
+// Swipe on reader for speed change + vertical swipe for navigation
 let touchStartX = 0;
 let touchStartY = 0;
 readerScreen.addEventListener('touchstart', (e) => {
@@ -407,12 +419,89 @@ readerScreen.addEventListener('touchstart', (e) => {
 }, { passive: true });
 
 readerScreen.addEventListener('touchend', (e) => {
+  if (isDraggingProgress) return;
   const dx = e.changedTouches[0].clientX - touchStartX;
   const dy = e.changedTouches[0].clientY - touchStartY;
-  // Only trigger if horizontal swipe is dominant and exceeds threshold
+  // Horizontal swipe: speed change
   if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
     changeSpeed(dx > 0 ? 25 : -25);
+    return;
   }
+  // Vertical swipe: fine navigation (rewind/skip 10 words)
+  if (Math.abs(dy) > 50 && Math.abs(dy) > Math.abs(dx) * 1.5 && !reader.finished && reader.totalWords > 0) {
+    const delta = dy > 0 ? -10 : 10;
+    const newIndex = reader.currentIndex + delta;
+    const wasPlaying = reader.seekTo(newIndex);
+    if (wasPlaying) reader.play();
+    showControls();
+  }
+});
+
+// ===== Progress bar seeking =====
+let isDraggingProgress = false;
+let wasPlayingBeforeDrag = false;
+
+function handleProgressSeek(clientX) {
+  if (reader.totalWords === 0) return;
+  const rect = progressTrack.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  const targetIndex = Math.round(pct * (reader.totalWords - 1));
+
+  // Un-finish if needed
+  if (reader.finished || !finishedControls.hidden) {
+    finishedControls.hidden = true;
+    readerControls.classList.remove('hidden');
+  }
+
+  reader.seekTo(targetIndex);
+}
+
+progressTrack.addEventListener('touchstart', (e) => {
+  isDraggingProgress = true;
+  wasPlayingBeforeDrag = reader.playing;
+  if (reader.playing) reader.pause();
+  progressBar.style.transition = 'none';
+  handleProgressSeek(e.touches[0].clientX);
+  showControls();
+  e.preventDefault();
+  e.stopPropagation();
+}, { passive: false });
+
+document.addEventListener('touchmove', (e) => {
+  if (!isDraggingProgress) return;
+  handleProgressSeek(e.touches[0].clientX);
+}, { passive: true });
+
+document.addEventListener('touchend', () => {
+  if (!isDraggingProgress) return;
+  isDraggingProgress = false;
+  progressBar.style.transition = '';
+  savePosition();
+  if (wasPlayingBeforeDrag) reader.play();
+});
+
+// Mouse support for progress bar (desktop)
+progressTrack.addEventListener('mousedown', (e) => {
+  isDraggingProgress = true;
+  wasPlayingBeforeDrag = reader.playing;
+  if (reader.playing) reader.pause();
+  progressBar.style.transition = 'none';
+  handleProgressSeek(e.clientX);
+  showControls();
+  e.preventDefault();
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!isDraggingProgress) return;
+  handleProgressSeek(e.clientX);
+});
+
+document.addEventListener('mouseup', () => {
+  if (!isDraggingProgress) return;
+  isDraggingProgress = false;
+  progressBar.style.transition = '';
+  savePosition();
+  if (wasPlayingBeforeDrag) reader.play();
 });
 
 // Auto-hide controls

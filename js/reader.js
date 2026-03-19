@@ -72,6 +72,16 @@ export class Reader {
     this.playing ? this.pause() : this.play();
   }
 
+  seekTo(index) {
+    const wasPlaying = this.playing;
+    if (wasPlaying) this.pause();
+    this.index = Math.max(0, Math.min(index, this.words.length - 1));
+    if (this.words.length > 0) {
+      this._emitWord();
+    }
+    return wasPlaying;
+  }
+
   _scheduleNext() {
     if (!this.playing) return;
     const delay = this._wordDelay(this.index);

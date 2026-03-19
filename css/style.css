@@ -193,16 +193,33 @@ html, body {
 }
 
 /* ===== Reader Screen ===== */
-.reader-progress-bar {
-  position: absolute;
-  top: 0;
-  left: 0;
+.reader-progress-track {
+  width: 100%;
+  flex-shrink: 0;
+  position: relative;
   height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  z-index: 10;
+}
+
+/* Expanded touch target */
+.reader-progress-track::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -10px;
+  bottom: -10px;
+}
+
+.reader-progress-bar {
+  height: 100%;
   background: var(--success);
   width: 0%;
-  z-index: 10;
   transition: width 0.15s linear;
   box-shadow: 0 0 6px rgba(0, 217, 166, 0.4);
+  pointer-events: none;
 }
 
 .reader-top-bar {
@@ -272,7 +289,9 @@ html, body {
 
 .finished-controls {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
   padding: 16px;
   padding-bottom: calc(16px + var(--safe-bottom));
   flex-shrink: 0;
@@ -280,6 +299,24 @@ html, body {
 
 .finished-controls[hidden] {
   display: none;
+}
+
+.read-again-btn {
+  background: var(--success);
+  color: var(--bg);
+  border: none;
+  padding: 12px 32px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+  min-width: 160px;
+  transition: opacity 0.15s;
+}
+
+.read-again-btn:active {
+  opacity: 0.85;
 }
 
 .focus-guide {

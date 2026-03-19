@@ -39,8 +39,6 @@
 
   <!-- ===== READER SCREEN ===== -->
   <div id="reader-screen" class="screen">
-    <div id="reader-progress-bar" class="reader-progress-bar"></div>
-
     <header id="reader-top-bar" class="reader-top-bar">
       <button id="back-btn" class="icon-btn" aria-label="Back">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -48,12 +46,17 @@
       <span id="word-counter" class="word-counter">0 / 0</span>
     </header>
 
+    <div id="reader-progress-track" class="reader-progress-track">
+      <div id="reader-progress-bar" class="reader-progress-bar"></div>
+    </div>
+
     <div id="word-display" class="word-display">
       <div class="focus-guide"></div>
       <span id="word-pre"></span><span id="word-orp"></span><span id="word-post"></span>
     </div>
 
     <div id="finished-controls" class="finished-controls" hidden>
+      <button id="read-again-btn" class="read-again-btn">Read Again</button>
       <button id="delete-finished-btn" class="danger-btn">Delete This Text</button>
     </div>
 
